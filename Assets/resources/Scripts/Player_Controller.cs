@@ -159,15 +159,14 @@ public class Player_Controller : MonoBehaviour
 
     void OpenDoor(GameObject door)
     {
-        // Logic to open/close the door
         Animator doorAnimator = door.GetComponent<Animator>();
         if (doorAnimator != null)
         {
-            doorAnimator.SetTrigger("Open");
+            doorAnimator.SetTrigger("Toggle");
         }
         else
         {
-            door.SetActive(!door.activeSelf); // Toggle door's active state (open/close)
+            Debug.LogWarning("No Animator component found on the door!");
         }
     }
 
@@ -176,14 +175,12 @@ public class Player_Controller : MonoBehaviour
         LockedDoor doorScript = lockedDoor.GetComponent<LockedDoor>();
         if (doorScript != null)
         {
-            // Check if the player has the key with the correct ID to open this specific door
-            if (currentKey == doorScript.requiredKey)
+            if (currentKey == doorScript.requiredKey) // Check if player has the right key
             {
-                doorScript.ToggleDoor(currentKey);  // Pass the key object to the door's toggle function
+                doorScript.ToggleDoor(currentKey);  // Pass the key object to the door's function
             }
             else
             {
-                // If the player doesn't have the key, show a message or sound
                 Debug.Log("You need the correct key to open this door!");
             }
         }
