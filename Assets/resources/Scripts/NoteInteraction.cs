@@ -11,8 +11,8 @@ public class NoteInteraction : MonoBehaviour
     private Quaternion originalRotation;
     private Transform originalParent;
 
-    private bool isReading = false;
-
+    private bool isReading = false;  // To track if the player is reading a note
+    
     void Start()
     {
         playerController = FindObjectOfType<ThirdPersonController>();
@@ -21,14 +21,19 @@ public class NoteInteraction : MonoBehaviour
 
     public void HandleNoteInteraction(GameObject note)
     {
-        if (isReading) return; // Prevents interacting with a new note while already reading one
-        PickUpNote(note);
+        if (isReading) // If the player is already reading the note
+        {
+            PutDownNote(); // Put down the note if reading
+        }
+        else if (note != null) // If the player is not reading a note and the note is valid
+        {
+            PickUpNote(note); // Pick up the note
+        }
     }
-
 
     private void PickUpNote(GameObject note)
     {
-        if (note == null) return;
+        if (note == null) return; // Make sure the note exists
 
         currentNote = note;
         originalParent = note.transform.parent;
@@ -43,24 +48,20 @@ public class NoteInteraction : MonoBehaviour
         }
 
         isReading = true;
-        if (playerController != null) playerController.enabled = false;
-
+        if (playerController != null) playerController.enabled = false; // Disable player movement while reading
     }
 
     public void PutDownNote()
     {
-        if (currentNote == null || !isReading) return;
+        if (currentNote == null || !isReading) return; // Only put down if we're holding a note
 
         currentNote.transform.SetParent(originalParent);
         currentNote.transform.position = originalPosition;
         currentNote.transform.rotation = originalRotation;
 
-        isReading = false;
+        isReading = false; // Set the state to not reading
         currentNote = null;
 
-        if (playerController != null) playerController.enabled = true;
-
+        if (playerController != null) playerController.enabled = true; // Re-enable player movement after putting down the note
     }
 }
-
-   
