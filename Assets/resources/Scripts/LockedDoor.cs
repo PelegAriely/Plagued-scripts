@@ -5,25 +5,39 @@ using UnityEngine.InputSystem;
 public class LockedDoor : MonoBehaviour
 {
     public GameObject requiredKey; // Reference to the key object required to open this door
-    private bool isUnlocked = false; // Whether the door is open or closed
-    private Animator animator;
+    private bool isOpen = false; // Whether the door is open or closed
 
     // Method to open or close the locked door
-    void Start()
+    public void ToggleDoor (GameObject key)
     {
-        animator = GetComponent<Animator>();
-    }
-
-    public void ToggleDoor(GameObject playerKey)
-    {
-        if (isUnlocked || playerKey == requiredKey)
+        if (key == requiredKey)
         {
-            isUnlocked = true; // Unlock the door permanently
-            animator.SetTrigger("Toggle"); // Play the door animation
+            isOpen = !isOpen;
+            
+            // Find the animator in the child object
+            Animator doorAnimator = GetComponentInChildren<Animator>();
+            if (doorAnimator != null )
+            {
+                if(isOpen)
+                {
+                    doorAnimator.SetTrigger("open");
+                }
+                else
+                {
+                    doorAnimator.SetTrigger("close");
+                }
+            }
+            else
+            {
+                Debug.LogError("No Animator found in LockedDoor children!");
+            }
+
+            Debug.Log(isOpen ? "The door is now open." : "The door is now closed.");
         }
         else
         {
-            Debug.Log("You need the correct key to open this door!");
+            Debug.Log("You need the correct key to open this door.");
         }
     }
+
 }

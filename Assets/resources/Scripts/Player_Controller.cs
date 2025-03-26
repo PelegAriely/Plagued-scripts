@@ -20,78 +20,50 @@ public class Player_Controller : MonoBehaviour
     private int maskUpgradeParts = 0; // Count mask upgrade parts collected
     private bool isPlayerNearbyMaskUpgrade = false;
     private GameObject maskUpgradeObject;
+    
+    private NoteInteraction noteInteraction; // Reference to the NoteInteraction script
 
     void Start()
     {
         // Find the first Lantern object in the scene
         lanternscript = Object.FindFirstObjectByType<Lantern>();
-
-        // If lanternscript is null, log an error to help with debugging
         if (lanternscript == null)
         {
             Debug.LogError("Lantern script is not found in the scene!");
         }
+        
         maskScript = Object.FindFirstObjectByType<mask>(); // Find the mask in the scene
+        
+        noteInteraction = FindObjectOfType<NoteInteraction>();
+        if(noteInteraction == null) Debug.LogError("Note interaction is not found in the scene!");
     }
 
         void Update()
     {
-        // check if the player is near an interactable object and press the interaction key
-        if (isNearInteractable && Input.GetKeyDown(interactionKey))
+        if (Input.GetKeyDown(interactionKey))
         {
-            // Interact base on the type of object 
-            if (interactableObject.CompareTag("Door"))
+            if (isNearInteractable)
             {
-                OpenDoor(interactableObject); // Call method to open/close door
+                if (interactableObject.CompareTag("Door")) OpenDoor(interactableObject);
+                else if (interactableObject.CompareTag("LockedDoor")) InteractWithLockedDoor(interactableObject);
+                else if (interactableObject.CompareTag("Key")) PickupKey(interactableObject);
+                else if (interactableObject.CompareTag("LockedBox")) InteractWithLockedBox(interactableObject);
+                else if (interactableObject.CompareTag("Note"))
+                    noteInteraction.HandleNoteInteraction(interactableObject);
             }
-            else if (interactableObject.CompareTag("LockedDoor"))
-            {
-                InteractWithLockedDoor(interactableObject); // Call method for locked door
-            }
-            else if (interactableObject.CompareTag("Key"))
-            {
-                PickupKey(interactableObject); // Call methods to pick up key
-            }
-            else if (interactableObject.CompareTag("LockedBox"))
-            {
-                InteractWithLockedBox(interactableObject); // Call method for locked box
-            }
-        }
-        // Picking up Upgrade Parts
-        if (isPlayerNearbyUpgrade && Input.GetKeyDown(interactionKey))
-        {
-            PickUpUpgrade();
-        }
-
-        // Upgrading Lantern at Station
-        if (isPlayerNearbyUpgradeStation && Input.GetKeyDown(interactionKey))
-        {
-            UpgradeLantern();
-        }
-
-        // Burn action: Only works if the lantern is upgraded, a flammable object is in range, and the lantern is on
-        if (lanternscript != null && lanternscript.IsLanternOn && lanternscript.isUpgraded && flammableObject != null && Input.GetKeyDown(KeyCode.E))
-        {
-            BurnObject();
-        }
-
-        // Picking up Mask Upgrade Parts
-        if (isPlayerNearbyMaskUpgrade && Input.GetKeyDown(interactionKey))
-        {
-            PickUpMaskUpgrade();
-        }
-
-        // Upgrading Mask at Station
-        if (isPlayerNearbyUpgradeStation && Input.GetKeyDown(interactionKey))
-        {
-            UpgradeMask();
+            else if (isPlayerNearbyUpgrade) PickUpUpgrade();
+            else if (isPlayerNearbyUpgradeStation) UpgradeLantern();
+            else if (isPlayerNearbyMaskUpgrade) PickUpMaskUpgrade();
+            else if (isPlayerNearbyUpgradeStation) UpgradeMask();
+            else if (lanternscript != null && lanternscript.IsLanternOn &&
+                     lanternscript.isUpgraded && flammableObject != null) BurnObject();
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-       // Check if the player is near an interactable object (use tags for categorization)
-       if (other.CompareTag("Door") || other.CompareTag("LockedDoor") || other.CompareTag("Key") || other.CompareTag("LockedBox"))
+        if (other.CompareTag("Door") || other.CompareTag("LockedDoor") ||
+            other.CompareTag("Key") || other.CompareTag("LockedBox") || other.CompareTag("Note"))
         {
             isNearInteractable = true;
             interactableObject = other.gameObject;
@@ -99,74 +71,47 @@ public class Player_Controller : MonoBehaviour
 
         if (other.CompareTag("Upgrade"))
         {
-            upgradeObject = other.gameObject;
             isPlayerNearbyUpgrade = true;
+            upgradeObject = other.gameObject;
         }
 
-        if (other.CompareTag("UpgradeStation"))
-        {
-            isPlayerNearbyUpgradeStation = true;
-        }
+        if (other.CompareTag("UpgradeStation")) isPlayerNearbyUpgradeStation = true;
+        if (other.CompareTag("UpgradeMask")) isPlayerNearbyMaskUpgrade = true;
 
-        // Detecting flammable objects only if the lantern is upgraded
-        if (lanternscript != null && lanternscript.isUpgraded)
+        if (lanternscript != null && lanternscript.isUpgraded && other.CompareTag("Flammable"))
         {
-            if (other.CompareTag("Flammable"))
-            {
-                flammableObject = other.gameObject;
-                Debug.Log($"Flammable object detected: {flammableObject.name}");
-            }
-        }
-        if (other.CompareTag("UpgradeMask"))
-        {
-            maskUpgradeObject = other.gameObject;
-            isPlayerNearbyMaskUpgrade = true;
+            flammableObject = other.gameObject;
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        // When leaving the trigger zone of an interactable object
-        if (other.CompareTag("Door") || other.CompareTag("LockedDoor") || other.CompareTag("Key") || other.CompareTag("LockedBox"))
+        if (other.CompareTag("Door") || other.CompareTag("LockedDoor") ||
+            other.CompareTag("Key") || other.CompareTag("LockedBox") || other.CompareTag("Note"))
         {
             isNearInteractable = false;
             interactableObject = null;
         }
 
-        if (other.CompareTag("Upgrade"))
-        {
-            isPlayerNearbyUpgrade = false;
-            upgradeObject = null;
-        }
-
-        if (other.CompareTag("UpgradeStation"))
-        {
-            isPlayerNearbyUpgradeStation = false;
-        }
-
-        // Leaving flammable object
-        if (other.CompareTag("Flammable") && other.gameObject == flammableObject)
-        {
-            Debug.Log($"Left flammable object: {flammableObject.name}");
-            flammableObject = null;
-        }
-        if (other.CompareTag("UpgradeMask"))
-        {
-            isPlayerNearbyMaskUpgrade = false;
-            maskUpgradeObject = null;
-        }
+        if (other.CompareTag("Upgrade")) isPlayerNearbyUpgrade = false;
+        if (other.CompareTag("UpgradeStation")) isPlayerNearbyUpgradeStation = false;
+        if (other.CompareTag("UpgradeMask")) isPlayerNearbyMaskUpgrade = false;
+        if (other.CompareTag("Flammable") && other.gameObject == flammableObject) flammableObject = null;
     }
 
     void OpenDoor(GameObject door)
     {
-        Animator doorAnimator = door.GetComponent<Animator>();
+        Animator doorAnimator = door.GetComponentInChildren<Animator>();
+
         if (doorAnimator != null)
         {
-            doorAnimator.SetTrigger("Toggle");
+            bool isOpen = doorAnimator.GetCurrentAnimatorStateInfo(0).IsName("Open");
+            doorAnimator.SetTrigger(isOpen ? "close" : "open");
+            Debug.Log(isOpen ? "Closing the door." : "Opening the door.");
         }
         else
         {
-            Debug.LogWarning("No Animator component found on the door!");
+            door.SetActive(!door.activeSelf);
         }
     }
 
@@ -175,12 +120,14 @@ public class Player_Controller : MonoBehaviour
         LockedDoor doorScript = lockedDoor.GetComponent<LockedDoor>();
         if (doorScript != null)
         {
-            if (currentKey == doorScript.requiredKey) // Check if player has the right key
+            // Check if the player has the correct key
+            if (currentKey == doorScript.requiredKey)
             {
-                doorScript.ToggleDoor(currentKey);  // Pass the key object to the door's function
+                doorScript.ToggleDoor(currentKey);  // Pass the key object to the door's toggle function
             }
             else
             {
+                // If the player doesn't have the key, show a message or sound
                 Debug.Log("You need the correct key to open this door!");
             }
         }
@@ -198,13 +145,7 @@ public class Player_Controller : MonoBehaviour
     void InteractWithLockedBox(GameObject lockedBox)
     {
         LockedBox box = lockedBox.GetComponent<LockedBox>();
-        if (box != null)
-        {
-            if (box != null)
-            {
-                box.StartInteraction();
-            }
-        }
+        if (box != null) box.StartInteraction();
     }
 
     private void PickUpUpgrade()
