@@ -152,6 +152,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   revealRange: 5
+  fullVisibilityDistance: 1
   lantern: {fileID: 1967739318}
   lanternScript: {fileID: 1967739314}
 --- !u!135 &103286652
@@ -198,7 +199,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 2fbea257ab2dc104fa0efcf0e8f2481f, type: 2}
+  - {fileID: 2100000, guid: 1a50a9ace93fd614db63694d201e262b, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8727,6 +8728,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   revealRange: 5
+  fullVisibilityDistance: 1
   lantern: {fileID: 1967739318}
   lanternScript: {fileID: 1967739314}
 --- !u!1 &1967739313
