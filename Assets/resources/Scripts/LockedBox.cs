@@ -1,6 +1,5 @@
 using UnityEngine;
-using UnityEngine.UI;
-using StarterAssets; // Import Starter Assets
+using StarterAssets;
 using TMPro;
 
 public class LockedBox : MonoBehaviour
@@ -14,9 +13,17 @@ public class LockedBox : MonoBehaviour
     [Header("References")]
     public GameObject objectInside; // The object inside the box (disabled until unlocked)
     public Animator boxAnimator; // Animator for the box opening
-    public GameObject uiPanel; // The UI panel for entering the code
-    public TMP_Text enteredCodeText; // UI TextMeshPro text for entered code
-    public TMP_Text feedbackText; // UI TextMeshPro text for feedback
+    public Transform lockModel; // The lock model that will move in front of the camera
+    public Transform lockViewingPosition; // The position in front of the camera for interaction
+
+    [Header("Text Elements")]
+    public TMP_Text lockText; // Displays messages like "Incorrect code"
+    public TMP_Text enteredCodeText; // Displays the numbers entered by the player
+    
+    private Vector3 originalLockPosition;
+    private Quaternion originalLockRotation;
+    private Transform originalLockParent;
+    
     public ThirdPersonController playerController; // Reference to player movement script (Starter Assets)
 
 
@@ -25,10 +32,20 @@ public class LockedBox : MonoBehaviour
     {
         if (objectInside != null)
         {
-            objectInside.SetActive(false); // Hide the object inside the box initially
+            objectInside.SetActive(false); // Hide the object inside initially
         }
 
-        uiPanel.SetActive(false); // Hide UI at the start
+        // Store the original position of the lock
+        if (lockModel != null)
+        {
+            originalLockPosition = lockModel.position;
+            originalLockRotation = lockModel.rotation;
+            originalLockParent = lockModel.parent;
+        }
+
+        // Disable text elements at start
+        if (lockText != null) lockText.gameObject.SetActive(false);
+        if (enteredCodeText != null) enteredCodeText.gameObject.SetActive(false);
     }
 
     void Update()
@@ -45,27 +62,24 @@ public class LockedBox : MonoBehaviour
             }
         }
 
-        if (isInteracting)
+        if (isInteracting && Input.anyKeyDown && enteredCode.Length < 3)
         {
-            if (Input.anyKeyDown && enteredCode.Length < 3)
+            string key = Input.inputString;
+            if (int.TryParse(key, out int digit))
             {
-                string key = Input.inputString;
-                if (int.TryParse(key, out int digit)) // Ensure the input is a digit
-                {
-                    enteredCode += key;
-                    enteredCodeText.text = enteredCode; // Update UI display
+                enteredCode += key;
+                UpdateEnteredCodeText(); // Update the text displayed on the lock
 
-                    if (enteredCode.Length == 3)
+                if (enteredCode.Length == 3)
+                {
+                    if (int.Parse(enteredCode) == correctCode)
                     {
-                        if (int.Parse(enteredCode) == correctCode)
-                        {
-                            UnlockBox();
-                        }
-                        else
-                        {
-                            feedbackText.text = "Incorrect code. Try again"; // 
-                            enteredCode = ""; // Reset the code if incorrect
-                        }
+                        UnlockBox();
+                    }
+                    else
+                    {
+                        lockText.text = "Incorrect code. Try again.";
+                        enteredCode = ""; // Reset code if incorrect
                     }
                 }
             }
@@ -77,41 +91,66 @@ public class LockedBox : MonoBehaviour
         if (!isUnlocked)
         {
             isUnlocked = true;
-            feedbackText.text = "Box unlocked!"; // Show unlock message in UI
+            lockText.text = "Unlocked!";
             Debug.Log("The box is unlocked!");
-            boxAnimator.SetTrigger("Open"); // Trigger the animation
+            boxAnimator.SetTrigger("Open"); // Trigger the box animation
 
             if (objectInside != null)
             {
-                objectInside.SetActive(true); // Enable the object inside
+                objectInside.SetActive(true); // Show the object inside
             }
 
-            StopInteraction(); // Close UI after unlocking
+            StopInteraction(); // Exit interaction mode after unlocking
         }
     }
 
-
     public void StartInteraction()
     {
-        if (!isUnlocked)
+        if (!isUnlocked && lockModel != null && lockViewingPosition != null)
         {
             isInteracting = true;
-            enteredCode = ""; // Reset the code every time a new interaction begins
-            enteredCodeText.text = ""; // Clear UI display
-            feedbackText.text = "Enter 3-digit code:"; // Instruction message
-            uiPanel.SetActive(true); // Show the UI
-            LockPlayerMovement(true); // Disable player movement
-            Debug.Log("Enter 3-digit code:");
+            enteredCode = ""; // Reset the entered code
+            
+            // Enable text elements
+            if (lockText != null)
+            {
+                lockText.gameObject.SetActive(true);
+                lockText.text = "Enter 3-digit code"; // Reset display text
+            }
+            
+            if (enteredCodeText != null)
+            {
+                enteredCodeText.gameObject.SetActive(true);
+                enteredCodeText.text = ""; // Reset the entered code display
+            }
+
+            // Move the lock model in front of the camera
+            lockModel.SetParent(lockViewingPosition);
+            lockModel.localPosition = Vector3.zero;
+            lockModel.localRotation = Quaternion.identity;
+
+            LockPlayerMovement(true);
         }
     }
 
     public void StopInteraction()
     {
+        if (lockModel != null)
+        {
+            // Return the lock model to its original position
+            lockModel.SetParent(originalLockParent);
+            lockModel.position = originalLockPosition;
+            lockModel.rotation = originalLockRotation;
+        }
+
+        // Disable text elements
+        if (lockText != null) lockText.gameObject.SetActive(false);
+        if (enteredCodeText != null) enteredCodeText.gameObject.SetActive(false);
+
+        
         isInteracting = false;
-        enteredCode = ""; // Clear the entered code
-        uiPanel.SetActive(false); // Hide the UI
-        LockPlayerMovement(false); // Enable player movement
-        Debug.Log("Stopped interacting with the box.");
+        enteredCode = ""; // Clear entered code
+        LockPlayerMovement(false);
     }
 
 
@@ -120,6 +159,14 @@ public class LockedBox : MonoBehaviour
         if (playerController != null)
         {
             playerController.enabled = !lockMovement; // Disable player movement when interacting
+        }
+    }
+    
+    private void UpdateEnteredCodeText()
+    {
+        if (enteredCodeText != null)
+        {
+            enteredCodeText.text = enteredCode; // Display the current entered code on the lock
         }
     }
     
