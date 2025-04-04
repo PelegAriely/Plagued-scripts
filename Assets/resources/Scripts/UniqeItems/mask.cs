@@ -3,7 +3,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class mask : MonoBehaviour
+public class Mask : MonoBehaviour
 {
     public bool IsMaskActive { get; private set; } = false; // Track is the mask is active 
 
