@@ -48,7 +48,6 @@ public class Player_Controller : MonoBehaviour
                 else if (interactableObject.CompareTag("LockedDoor")) InteractWithLockedDoor(interactableObject);
                 else if (interactableObject.CompareTag("Key")) PickupKey(interactableObject);
                 else if (interactableObject.CompareTag("LockedBox")) InteractWithLockedBox(interactableObject);
-                else if (interactableObject.CompareTag("Box")) OpenBox(interactableObject);
                 else if (interactableObject.CompareTag("Note"))
                     noteInteraction.HandleNoteInteraction(interactableObject);
             }
@@ -63,7 +62,7 @@ public class Player_Controller : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Door") || other.CompareTag("LockedDoor") || other.CompareTag("Box") ||
+        if (other.CompareTag("Door") || other.CompareTag("LockedDoor") ||
             other.CompareTag("Key") || other.CompareTag("LockedBox") || other.CompareTag("Note"))
         {
             isNearInteractable = true;
@@ -87,7 +86,7 @@ public class Player_Controller : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Door") || other.CompareTag("LockedDoor") || other.CompareTag("Box") ||
+        if (other.CompareTag("Door") || other.CompareTag("LockedDoor") ||
             other.CompareTag("Key") || other.CompareTag("LockedBox") || other.CompareTag("Note"))
         {
             isNearInteractable = false;
@@ -220,15 +219,6 @@ public class Player_Controller : MonoBehaviour
         else
         {
             Debug.Log("Not enough parts to upgrade the mask! Need " + (3 - maskUpgradeParts) + " more.");
-        }
-    }
-
-    void OpenBox(GameObject boxObject)
-    {
-        Box box = boxObject.GetComponent<Box>();
-        if (box != null)
-        {
-            box.OpenBox();
         }
     }
 }
