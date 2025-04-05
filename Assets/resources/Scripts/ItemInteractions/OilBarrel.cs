@@ -2,35 +2,46 @@ using UnityEngine;
 
 public class OilBarrel : MonoBehaviour
 {
-    public Lantern lantern; // Referemce to the lantern object
-    public float refillDistance = 1.5f; // The distance within which the player can interact with the barrel
+    private Lantern lanternNearby; // Reference to the player's lantern when in range
+    private bool isPlayerInRange = false; // Tracks whether the player is currently inside the trigger zone
 
-
-    void Update()
+    public void Refill()
     {
-        // Find the player by tag
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-
-        if (player != null)
+        // Only refill if the player is in range and a lantern is linked
+        if (isPlayerInRange && lanternNearby != null)
         {
-            // Check if the player is within range of the oil barrel
-            if (Vector3.Distance(transform.position, player.transform.position) <= refillDistance)
-            {
-                // If the player presses the "E" key and the lantern is not null
-                if (Input.GetKeyDown(KeyCode.E) && lantern != null)
-                {
-                    // Refill the lantern's charge regardless of its state
-                    lantern.RefillCharge(); // Refill the lantern's charge
-                }
-            }
+            lanternNearby.UseRefill(); // Refill the lantern
+            Debug.Log("Lantern refilled by Oil Barrel.");
         }
     }
 
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player"))
+        {
+            isPlayerInRange = true;
+            
+            if (other.TryGetComponent(out Lantern foundLantern))
+            {
+                lanternNearby = foundLantern; // Store reference to the lantern for refilling
+            }
+        }
+    }
+    
+    private void OnTriggerExit(Collider other)
+    {
+        // When the player leaves the barrel's range
+        if (other.CompareTag("Player"))
+        {
+            isPlayerInRange = false;
+            lanternNearby = null; // Clear reference to avoid unintended refill
+        }
+    }
 
     private void OnDrawGizmos()
     {
-        // Visualize the interaction range in the editor
+        // Draw a wireframe sphere around the barrel to visualize the interaction range in the editor
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere (transform.position, refillDistance);
+        Gizmos.DrawWireSphere(transform.position, 1.5f); // Fixed radius for now
     }
 }

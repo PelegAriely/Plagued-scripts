@@ -57,11 +57,11 @@ public class PlayerInteraction : MonoBehaviour
         }
         
         // If the player enters a collider with a Mask component, store a reference to it
-        if (other.TryGetComponent(out Mask mask))
+        if (other.TryGetComponent(out Mask foundMask))
         {
             mask = foundMask;
             interactionMaskText.text = $"Press {interactMaskKey} to interact with Mask";
-            interactionMaskText.gameObject.SetActive(true); // Show interaction prompt
+            interactionMaskText.gameObject.SetActive(true);
         }
     }
 

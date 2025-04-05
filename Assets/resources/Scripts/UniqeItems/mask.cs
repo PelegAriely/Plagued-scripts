@@ -5,59 +5,60 @@ using UnityEngine.UI;
 
 public class Mask : MonoBehaviour
 {
-    public bool IsMaskActive { get; private set; } = false; // Track is the mask is active 
+    [Header("Breath Settings")] 
+    public float breathDepletionRate = 10f; // Breath loss per second while in fog with mask on
+    
+    private bool isMaskActive = false;   // Whether the mask is currently active
+    private bool isInFog = false;        // Whenther the player is currently in fog
 
-    [Header("Upgrade Settings")]
-    public bool IsUpgraded = false; // Track if the mask has been upgraded
-    public PlayerInteraction PlayerInteractionScript;
-    public float upgradedBreathDepletionRate = 0.1f; // New depletion rate after upgrade
 
-    // Method to turn on the mask
-    public void TurnOnMask()
+    private float currentBreath = 100f;    // Remaining breath
+    private float maxBreath = 100f;        // Maximum breath value
+
+    void update()
     {
-        if (!IsMaskActive)
+        if (isInFog && isMaskActive)
         {
-            // Perform any actions related to turning on the mask, e.g., enable mask visuals
-            IsMaskActive = true;
-            Debug.Log("Mask is now active.");
-            // Optionally, you can add code here to handle things like mask animations or effects
+            // Decrease breath over time, clamping to 0
+            currentBreath = Mathf.Max(0, currentBreath - breathDepletionRate * Time.deltaTime);
+        }
+        // add behavior here if breath runs out
+        
+    }
+
+    public void ToggleMask()
+    {
+        if (isMaskActive)
+            TurnOffMask();
+        else
+            TurnOnMask();
+    }
+    
+    private void TurnOnMask()
+    {
+        isMaskActive = true;
+        Debug.Log("Mask is now active.");
+    }
+
+    private void TurnOffMask()
+    {
+        isMaskActive = false;
+        Debug.Log("Mask is now inactive.");
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Fog"))
+        {
+            isInFog = true; 
         }
     }
-    // Method to turn off the mask
-    public void TurnOffMask()
+    
+    private void OnTriggerExit(Collider other)
     {
-        if (IsMaskActive)
+        if (other.CompareTag("Fog"))
         {
-            IsMaskActive = false;
-            // Perform any actions related to turning off the mask, e.g., disable mask visuals
-            Debug.Log("Mask is now inactive.");
-            // Optionally, you can add code here to handle things like mask animations or effects
-        }
-
-    }
-
-    // Optionally: Visual effects for the mask when active (can be modified)
-    public void ActivateMaskVisuals()
-    {
-        // Add your code to handle mask visual effects here (e.g., activating particles or animations)
-    }
-
-    public void DeactivateMaskVisuals()
-    {
-        // Add your code to handle mask visual effects here (e.g., deactivating particles or animations)
-    }
-
-    // Method to upgrade the mask
-    public void UpgradeMask()
-    {
-        if (!IsUpgraded)
-        {
-            IsUpgraded = true; // Mark mask as upgraded
-            if (PlayerInteractionScript != null)
-            {
-                PlayerInteractionScript.maskBreathDepletionRate = upgradedBreathDepletionRate; // Reduce depletion rate
-            }
-            Debug.Log("Mask upgraded! Breath depletion rate reduced.");
+            isInFog = false;
         }
     }
 }
