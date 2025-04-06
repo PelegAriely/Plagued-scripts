@@ -392,7 +392,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1585483931}
-  - {fileID: 1951540792}
   - {fileID: 1405427192}
   - {fileID: 203515987}
   - {fileID: 438597724}
@@ -1330,7 +1329,7 @@ GameObject:
   m_Component:
   - component: {fileID: 711564927}
   m_Layer: 0
-  m_Name: EmptyHeadObject
+  m_Name: MaskOnPosition
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2216,7 +2215,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1243576733}
   m_Layer: 0
-  m_Name: EmptyHandObject
+  m_Name: LanternOnPosition
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2590,6 +2589,7 @@ GameObject:
   - component: {fileID: 1409653338}
   - component: {fileID: 1409653337}
   - component: {fileID: 1409653336}
+  - component: {fileID: 1409653340}
   m_Layer: 0
   m_Name: Upgrade_Station
   m_TagString: UpgradeStation
@@ -2707,6 +2707,20 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1409653334}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1409653340
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1409653334}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2aa4bcd21d468524a8c5a75fceb6ddcc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lantern: {fileID: 1967739314}
+  partsRequired: 3
 --- !u!1 &1420027484
 GameObject:
   m_ObjectHideFlags: 0
@@ -7848,8 +7862,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3b934b3f9017d3439af16463999af08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  lantern: {fileID: 1967739314}
-  refillDistance: 1.2
 --- !u!136 &1523565672
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -8125,9 +8137,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: edd8050afd8f50a4a995483b46cd1cca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  IsUpgraded: 0
-  PlayerInteractionScript: {fileID: 1762682261}
-  upgradedBreathDepletionRate: 0.1
+  depletionMultiplierWhenActive: 0.1
+  maskOnPosition: {fileID: 711564927}
+  maskOffPosition: {fileID: 1854331084}
 --- !u!65 &1585483928
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -8211,7 +8223,7 @@ Transform:
   m_GameObject: {fileID: 1585483926}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 12.98, y: 1.293, z: 2.15}
+  m_LocalPosition: {x: 10.774, y: 1.293, z: 1.148}
   m_LocalScale: {x: 0.25242403, y: 0.3003582, z: 0.08941405}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8295,9 +8307,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1762682261}
-    - targetCorrespondingSourceObject: {fileID: 4416926081852918481, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1762682263}
   m_SourcePrefab: {fileID: 100100000, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
 --- !u!114 &1762682259 stripped
 MonoBehaviour:
@@ -8334,21 +8343,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   interactLanternKey: 114
-  pickUpFillObjectKey: 101
-  useFillObjectKey: 102
   interactMaskKey: 113
+  useFillObjectKey: 102
   interactionLanternText: {fileID: 1925656913}
   interactionMaskText: {fileID: 2134633497}
-  maxBreath: 100
-  currentBreath: 0
-  normalBreathDepletionRate: 10
-  maskBreathDepletionRate: 0.2
-  emptyHandObject: {fileID: 1243576732}
-  emptyHandObjectPutAway: {fileID: 1973541131}
-  emptyHeadObject: {fileID: 711564926}
-  emptyHeadObjectPutAway: {fileID: 1854331083}
-  maxFillObjects: 3
-  replenishAmount: 50
+  baseBreathDepletionRate: 10
+  breathRegenRate: 5
 --- !u!114 &1762682262
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8362,18 +8362,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   interactionKey: 101
---- !u!114 &1762682263
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 688226383}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8125dcc72e68fe14f9745ebbc69609d6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  lanternScript: {fileID: 1967739314}
+  lanternUpgradeSystem: {fileID: 1409653340}
+  noteInteraction: {fileID: 0}
 --- !u!1 &1764214107
 GameObject:
   m_ObjectHideFlags: 0
@@ -8449,7 +8440,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1854331084}
   m_Layer: 0
-  m_Name: EmptyHeadObjectPutAway
+  m_Name: MaskOffPosition
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -8606,131 +8597,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1925656911}
   m_CullTransparentMesh: 1
---- !u!1 &1951540788
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1951540792}
-  - component: {fileID: 1951540791}
-  - component: {fileID: 1951540790}
-  - component: {fileID: 1951540789}
-  - component: {fileID: 1951540793}
-  m_Layer: 0
-  m_Name: fog
-  m_TagString: Fog
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!65 &1951540789
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1951540788}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!23 &1951540790
-MeshRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1951540788}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 2
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 2100000, guid: 2fbea257ab2dc104fa0efcf0e8f2481f, type: 2}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_AdditionalVertexStreams: {fileID: 0}
---- !u!33 &1951540791
-MeshFilter:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1951540788}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &1951540792
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1951540788}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 14.75, y: 1.547, z: 3.5}
-  m_LocalScale: {x: 2.0612, y: 1.4351, z: 1.5043}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 422822710}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1951540793
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1951540788}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f343f6e14addfc24dbd2dfcfc852ae9e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  revealRange: 5
-  fullVisibilityDistance: 1
-  lantern: {fileID: 1967739318}
-  lanternScript: {fileID: 1967739314}
 --- !u!1 &1967739313
 GameObject:
   m_ObjectHideFlags: 0
@@ -8765,13 +8631,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lanternLight: {fileID: 510347269}
-  revealRadius: 1
+  lanternOnPosition: {fileID: 1243576733}
+  lanternOffPosition: {fileID: 1973541132}
   maxCharge: 100
   chargeDepletionRate: 1
-  upgradeExtraCharge: 50
+  burnInterval: 1
   burnChargeCost: 10
-  currentCharge: 0
-  isUpgraded: 0
 --- !u!135 &1967739315
 SphereCollider:
   m_ObjectHideFlags: 0
@@ -8899,7 +8764,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1973541132}
   m_Layer: 0
-  m_Name: EmptyHandObjectPutAway
+  m_Name: LanternOffPosition
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

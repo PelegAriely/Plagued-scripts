@@ -3,25 +3,31 @@ using System.Collections;
 
 public class Lantern : MonoBehaviour
 {
-    public GameObject lanternLight; // Reference to the actual light GameObject
-    public float maxCharge = 100f; // Maximum energy the lantern can hold
-    public float chargeDepletionRate = 1f; // Rate at which the charge depletes per second
-    public float burnInterval = 1f; // Time interval for burning objects
-    public float burnChargeCost = 10f;
-    
-    private float currentCharge; // Tracks the current charge level
-    private bool isLanternOn = false; // Is the lantern currently active?
-    private bool isInFog = false; // Is the player inside a fog area?
-    private bool hasBurnUpgrade = false; // Does the lantern have the burn upgrade?
+    [Header("Lantern References")]
+    public GameObject lanternLight;
+    public Transform lanternOnPosition;   // ✅ Position when active
+    public Transform lanternOffPosition;  // ✅ Position when inactive
 
-    private Coroutine chargeDepletionCoroutine; // Reference to charge depletion coroutine
-    private Coroutine burnCoroutine; // Reference to burn effect coroutine
-    private Collider currentBurnable; // Stores the current object that can be burned
-    
+    [Header("Charge Settings")]
+    public float maxCharge = 100f;
+    public float chargeDepletionRate = 1f;
+    public float burnInterval = 1f;
+    public float burnChargeCost = 10f;
+
+    private float currentCharge;
+    private bool isLanternOn = false;
+    private bool isInFog = false;
+    private bool hasBurnUpgrade = false;
+
+    private Coroutine chargeDepletionCoroutine;
+    private Coroutine burnCoroutine;
+    private Collider currentBurnable;
+
     public float CurrentCharge => currentCharge;
     public float BurnChargeCost => burnChargeCost;
     public bool IsLanternOn => isLanternOn;
     public bool IsUpgraded => hasBurnUpgrade;
+
     public event System.Action<bool> OnLanternToggled;
 
     void Start()
@@ -46,6 +52,7 @@ public class Lantern : MonoBehaviour
         {
             isLanternOn = true;
             lanternLight.SetActive(true);
+            MoveToOnPosition();
             OnLanternToggled?.Invoke(true);
         }
     }
@@ -54,6 +61,7 @@ public class Lantern : MonoBehaviour
     {
         isLanternOn = false;
         lanternLight.SetActive(false);
+        MoveToOffPosition();
         OnLanternToggled?.Invoke(false);
     }
 
@@ -162,6 +170,26 @@ public class Lantern : MonoBehaviour
     public void ConsumeCharge(float amount)
     {
         currentCharge = Mathf.Max(0, currentCharge - amount);
+    }
+    
+    private void MoveToOnPosition()
+    {
+        if (lanternOnPosition != null)
+        {
+            transform.SetParent(lanternOnPosition);
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+        }
+    }
+
+    private void MoveToOffPosition()
+    {
+        if (lanternOffPosition != null)
+        {
+            transform.SetParent(lanternOffPosition);
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+        }
     }
 }
 

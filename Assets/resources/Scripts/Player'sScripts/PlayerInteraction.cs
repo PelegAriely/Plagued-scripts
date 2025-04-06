@@ -12,6 +12,12 @@ public class PlayerInteraction : MonoBehaviour
     public TextMeshProUGUI interactionLanternText;
     public TextMeshProUGUI interactionMaskText;
 
+    public float baseBreathDepletionRate = 10f;
+    public float breathRegenRate = 5f;
+    private float currentBreath = 100f;
+    private float maxBreath = 100f;
+    private bool isInFog = false;
+
     private Lantern lantern;
     private Mask mask;
     private OilBarrel oilBarrel;
@@ -29,7 +35,8 @@ public class PlayerInteraction : MonoBehaviour
         {
             { interactLanternKey, () => lantern?.ToggleLantern() },
             { interactMaskKey, () => mask?.ToggleMask() },
-            { useFillObjectKey, () => {
+            { useFillObjectKey, () =>
+            {
                 if (oilBarrel != null)
                     oilBarrel.Refill();
                 else
@@ -49,10 +56,40 @@ public class PlayerInteraction : MonoBehaviour
                 break; // Exit loop after one action per frame
             }
         }
+        HandleBreathing();
     }
 
+    private void HandleBreathing()
+    {
+        if (isInFog)
+        {
+            float multiplier = mask != null ? mask.GetDepletionMultiplier() : 1f;
+            float rate = baseBreathDepletionRate * multiplier;
+
+            currentBreath = Mathf.Max(0f, currentBreath - rate * Time.deltaTime);
+
+            Debug.Log($"[Breath] Current: {currentBreath:0.00} (Multiplier: {multiplier})");
+
+            if (currentBreath <= 0f)
+            {
+                Debug.LogWarning("⚠️ Out of breath!");
+            }
+        }
+        else if (currentBreath < maxBreath)
+        {
+            currentBreath = Mathf.Min(maxBreath, currentBreath + breathRegenRate * Time.deltaTime);
+            Debug.Log($"[Breath Regenerating] Current: {currentBreath:0.00}");
+        }
+    }
+    
     private void OnTriggerEnter(Collider other)
     {
+        if (other.CompareTag("Fog"))
+        {
+            isInFog = true;
+            Debug.Log("🌫️ Entered fog.");
+        }
+
         if (other.TryGetComponent(out Lantern foundLantern))
         {
             lantern = foundLantern;
@@ -75,6 +112,12 @@ public class PlayerInteraction : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
+        if (other.CompareTag("Fog"))
+        {
+            isInFog = false;
+            Debug.Log("🌤️ Exited fog.");
+        }
+
         if (other.TryGetComponent(out Lantern _))
         {
             lantern = null;

@@ -5,25 +5,20 @@ using UnityEngine.UI;
 
 public class Mask : MonoBehaviour
 {
-    [Header("Breath Settings")] 
-    public float breathDepletionRate = 10f; // Breath loss per second while in fog with mask on
+    [Header("Depletion Multiplier Settings")]
+    public float depletionMultiplierWhenActive = 0.1f;
+
+    [Header("Mask Position Transforms")]
+    public Transform maskOnPosition;
+    public Transform maskOffPosition;
+
+    private bool isMaskActive = false;
+
+    public bool IsMaskActive => isMaskActive;
     
-    private bool isMaskActive = false;   // Whether the mask is currently active
-    private bool isInFog = false;        // Whenther the player is currently in fog
-
-
-    private float currentBreath = 100f;    // Remaining breath
-    private float maxBreath = 100f;        // Maximum breath value
-
-    void update()
+    public float GetDepletionMultiplier()
     {
-        if (isInFog && isMaskActive)
-        {
-            // Decrease breath over time, clamping to 0
-            currentBreath = Mathf.Max(0, currentBreath - breathDepletionRate * Time.deltaTime);
-        }
-        // add behavior here if breath runs out
-        
+        return isMaskActive ? depletionMultiplierWhenActive : 1f;
     }
 
     public void ToggleMask()
@@ -38,27 +33,33 @@ public class Mask : MonoBehaviour
     {
         isMaskActive = true;
         Debug.Log("Mask is now active.");
+        MoveToOnPosition();
     }
 
     private void TurnOffMask()
     {
         isMaskActive = false;
         Debug.Log("Mask is now inactive.");
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("Fog"))
-        {
-            isInFog = true; 
-        }
+        MoveToOffPosition();
     }
     
-    private void OnTriggerExit(Collider other)
+    private void MoveToOnPosition()
     {
-        if (other.CompareTag("Fog"))
+        if (maskOnPosition != null)
         {
-            isInFog = false;
+            transform.SetParent(maskOnPosition);
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+        }
+    }
+
+    private void MoveToOffPosition()
+    {
+        if (maskOffPosition != null)
+        {
+            transform.SetParent(maskOffPosition);
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
         }
     }
 }
