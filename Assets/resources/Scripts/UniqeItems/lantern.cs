@@ -7,8 +7,9 @@ public class Lantern : MonoBehaviour
     public float maxCharge = 100f; // Maximum energy the lantern can hold
     public float chargeDepletionRate = 1f; // Rate at which the charge depletes per second
     public float burnInterval = 1f; // Time interval for burning objects
+    public float burnChargeCost = 10f;
+    
     private float currentCharge; // Tracks the current charge level
-
     private bool isLanternOn = false; // Is the lantern currently active?
     private bool isInFog = false; // Is the player inside a fog area?
     private bool hasBurnUpgrade = false; // Does the lantern have the burn upgrade?
@@ -17,14 +18,16 @@ public class Lantern : MonoBehaviour
     private Coroutine burnCoroutine; // Reference to burn effect coroutine
     private Collider currentBurnable; // Stores the current object that can be burned
     
-    public event System.Action<bool> OnLanternToggled;
-    // Optional helper property for external scripts
+    public float CurrentCharge => currentCharge;
+    public float BurnChargeCost => burnChargeCost;
     public bool IsLanternOn => isLanternOn;
+    public bool IsUpgraded => hasBurnUpgrade;
+    public event System.Action<bool> OnLanternToggled;
 
     void Start()
     {
-        currentCharge = maxCharge; // Start with full charge
-        lanternLight.SetActive(false); // The lantern starts off
+        currentCharge = maxCharge;
+        lanternLight.SetActive(false);
     }
 
     public void ToggleLantern()
@@ -43,7 +46,7 @@ public class Lantern : MonoBehaviour
         {
             isLanternOn = true;
             lanternLight.SetActive(true);
-            OnLanternToggled?.Invoke(true); // Broadcast event
+            OnLanternToggled?.Invoke(true);
         }
     }
 
@@ -51,7 +54,7 @@ public class Lantern : MonoBehaviour
     {
         isLanternOn = false;
         lanternLight.SetActive(false);
-        OnLanternToggled?.Invoke(false); // Broadcast event
+        OnLanternToggled?.Invoke(false);
     }
 
     public void UseRefill()
@@ -59,13 +62,17 @@ public class Lantern : MonoBehaviour
         currentCharge = maxCharge; // Restore the lantern's charge
         Debug.Log("Lantern refilled.");
     }
+    
+    public void UpgradeLantern()
+    {
+        EnableBurnUpgrade();
+    }
 
     public void EnableBurnUpgrade()
     {
         hasBurnUpgrade = true;
         Debug.Log("Burn upgrade activated!");
 
-        // If the lantern is already on and near a burnable object, start burning
         if (isLanternOn && currentBurnable != null)
             burnCoroutine = StartCoroutine(BurnObjects());
     }
@@ -74,8 +81,7 @@ public class Lantern : MonoBehaviour
     {
         hasBurnUpgrade = false;
         Debug.Log("Burn upgrade deactivated.");
-        
-        // stop the burn effect if it was active
+
         if (burnCoroutine != null)
         {
             StopCoroutine(burnCoroutine);
@@ -85,34 +91,33 @@ public class Lantern : MonoBehaviour
 
     private IEnumerator DepleteCharge()
     {
-        while (isLanternOn && !isInFog) // Only drain charge when lantern is on and outside fog
+        while (isLanternOn && !isInFog)
         {
             currentCharge -= chargeDepletionRate * Time.deltaTime;
-            
+
             if (currentCharge <= 0)
             {
-                TurnOffLantern(); // Turn off when out of charge
+                TurnOffLantern();
                 yield break;
             }
 
-            yield return null; // Wait for the next frame
-        }  
+            yield return null;
+        }
     }
 
     private IEnumerator BurnObjects()
     {
         while (hasBurnUpgrade && isLanternOn && currentBurnable != null)
         {
-            // Get the burnable object and call its Burn() method
             BurnableObject burnable = currentBurnable.GetComponent<BurnableObject>();
 
             if (burnable)
             {
-                burnable.Burn(); // Destroy the object
-                currentBurnable = null; // Reset reference since it's now gone
+                burnable.Burn();
+                currentBurnable = null;
             }
 
-            yield return new WaitForSeconds(burnInterval); // Wait before checking again
+            yield return new WaitForSeconds(burnInterval);
         }
     }
 
@@ -152,6 +157,11 @@ public class Lantern : MonoBehaviour
                 burnCoroutine = null;
             }
         }
+    }
+    
+    public void ConsumeCharge(float amount)
+    {
+        currentCharge = Mathf.Max(0, currentCharge - amount);
     }
 }
 

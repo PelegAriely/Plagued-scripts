@@ -1,84 +1,95 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-
 public class PlayerInteraction : MonoBehaviour
 {
-    // Key bindings for different interactions
-    public KeyCode interactLanternKey = KeyCode.E;  // Key to interact with the lantern
-    public KeyCode interactMaskKey = KeyCode.Q;     // Key to interact with the mask
-    public KeyCode useFillObjectKey = KeyCode.R;    // Key to refill the lantern
-    
-    // UI elements to display interaction prompts
-    public TextMeshProUGUI interactionLanternText; 
+    public KeyCode interactLanternKey = KeyCode.R;
+    public KeyCode interactMaskKey = KeyCode.Q;
+    public KeyCode useFillObjectKey = KeyCode.F;
+
+    public TextMeshProUGUI interactionLanternText;
     public TextMeshProUGUI interactionMaskText;
 
-    // References to the Lantern and Mask objects the player is interacting with
     private Lantern lantern;
     private Mask mask;
+    private OilBarrel oilBarrel;
+
+    // Dictionary to map keys to actions
+    private Dictionary<KeyCode, Action> keyActions;
 
     void Start()
     {
-        // Hide the interaction text prompts at the beginning
         interactionLanternText.gameObject.SetActive(false);
         interactionMaskText.gameObject.SetActive(false);
+
+        // Map keys to relevant actions
+        keyActions = new Dictionary<KeyCode, Action>
+        {
+            { interactLanternKey, () => lantern?.ToggleLantern() },
+            { interactMaskKey, () => mask?.ToggleMask() },
+            { useFillObjectKey, () => {
+                if (oilBarrel != null)
+                    oilBarrel.Refill();
+                else
+                    lantern?.UseRefill();
+            }}
+        };
     }
 
     void Update()
     {
-        // If the player has a lantern nearby and presses the interaction key, toggle it
-        if (lantern && Input.GetKeyDown(interactLanternKey))
+        // Check for key presses and invoke the mapped action
+        foreach (var keyAction in keyActions)
         {
-            lantern.ToggleLantern();
-        }
-
-        // If the player has a mask nearby and presses the interaction key, toggle it
-        if (mask && Input.GetKeyDown(interactMaskKey))
-        {
-            mask.ToggleMask();
-        }
-
-        // If the player has a lantern and presses the refill key, refill it
-        if (lantern && Input.GetKeyDown(useFillObjectKey))
-        {
-            lantern.UseRefill();
+            if (Input.GetKeyDown(keyAction.Key))
+            {
+                keyAction.Value?.Invoke();
+                break; // Exit loop after one action per frame
+            }
         }
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        // If the player enters a collider with a Lantern component, store a reference to it
         if (other.TryGetComponent(out Lantern foundLantern))
         {
             lantern = foundLantern;
             interactionLanternText.text = $"Press {interactLanternKey} to interact with Lantern";
-            interactionLanternText.gameObject.SetActive(true); // Show interaction prompt
+            interactionLanternText.gameObject.SetActive(true);
         }
-        
-        // If the player enters a collider with a Mask component, store a reference to it
+
         if (other.TryGetComponent(out Mask foundMask))
         {
             mask = foundMask;
             interactionMaskText.text = $"Press {interactMaskKey} to interact with Mask";
             interactionMaskText.gameObject.SetActive(true);
         }
+
+        if (other.TryGetComponent(out OilBarrel foundBarrel))
+        {
+            oilBarrel = foundBarrel;
+        }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        // If the player leaves the area of a lantern, remove the reference and hide the prompt
         if (other.TryGetComponent(out Lantern _))
         {
             lantern = null;
             interactionLanternText.gameObject.SetActive(false);
         }
-        
-        // If the player leaves the area of a mask, remove the reference and hide the prompt
+
         if (other.TryGetComponent(out Mask _))
         {
             mask = null;
             interactionMaskText.gameObject.SetActive(false);
+        }
+
+        if (other.TryGetComponent(out OilBarrel _))
+        {
+            oilBarrel = null;
         }
     }
 }

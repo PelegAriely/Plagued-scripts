@@ -1,113 +1,106 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Player_Controller : MonoBehaviour
-{ 
-    public KeyCode interactionKey = KeyCode.E; // Set interaction key
+{
+    [Header("Interaction Settings")]
+    public KeyCode interactionKey = KeyCode.E;
 
-    private bool isNearInteractable = false;  // Whether the player is near an interactable object
-    private GameObject interactableObject = null;  // The current interactable object (e.g., door, item, etc.)
-    private bool hasKey = false; // Boolean to check is the player had the key
-    private GameObject currentKey;  // Store the current key the player has
+    [Header("Lantern & Upgrade Systems")]
+    [SerializeField] private Lantern lanternScript;
+    [SerializeField] private LanternUpgradeSystem lanternUpgradeSystem;
 
-    private bool isPlayerNearbyUpgrade = false;
-    private bool isPlayerNearbyUpgradeStation = false;
-    private GameObject upgradeObject;
-    private int lanternUpgradeParts = 0; // Count upgrade parts collected
-    private Lantern lanternscript;
+    [Header("Note Interaction")]
+    [SerializeField] private NoteInteraction noteInteraction;
 
-    private GameObject flammableObject = null; // Store nearby flammable object
-    private mask maskScript; // Reference to the mask script
-    private int maskUpgradeParts = 0; // Count mask upgrade parts collected
-    private bool isPlayerNearbyMaskUpgrade = false;
-    private GameObject maskUpgradeObject;
-    
-    private NoteInteraction noteInteraction; // Reference to the NoteInteraction script
+    private GameObject interactableObject = null;
+    private GameObject flammableObject = null;
+    private GameObject currentKey = null;
+
+    private bool isAtUpgradeStation = false;
+    private int lanternUpgradeParts = 0;
+
+    private Dictionary<string, Action<GameObject>> interactionMap;
 
     void Start()
     {
-        // Find the first Lantern object in the scene
-        lanternscript = Object.FindFirstObjectByType<Lantern>();
-        if (lanternscript == null)
+        if (lanternScript == null)
+            lanternScript = FindObjectOfType<Lantern>();
+
+        if (noteInteraction == null)
+            noteInteraction = FindObjectOfType<NoteInteraction>();
+
+        if (lanternUpgradeSystem == null)
+            lanternUpgradeSystem = FindObjectOfType<LanternUpgradeSystem>();
+
+        interactionMap = new Dictionary<string, Action<GameObject>>
         {
-            Debug.LogError("Lantern script is not found in the scene!");
-        }
-        
-        maskScript = Object.FindFirstObjectByType<mask>(); // Find the mask in the scene
-        
-        noteInteraction = FindObjectOfType<NoteInteraction>();
-        if(noteInteraction == null) Debug.LogError("Note interaction is not found in the scene!");
+            { "Door", OpenDoor },
+            { "LockedDoor", InteractWithLockedDoor },
+            { "Key", PickupKey },
+            { "LockedBox", InteractWithLockedBox },
+            { "Note", obj => noteInteraction?.HandleNoteInteraction(obj) },
+            { "Upgrade", PickUpUpgrade },
+            { "UpgradeStation", obj => UpgradeLantern() }
+        };
     }
 
-        void Update()
+    void Update()
     {
-        if (Input.GetKeyDown(interactionKey))
+        if (!Input.GetKeyDown(interactionKey)) return;
+
+        if (interactableObject != null && interactionMap.TryGetValue(interactableObject.tag, out var action))
         {
-            if (isNearInteractable)
-            {
-                if (interactableObject.CompareTag("Door")) OpenDoor(interactableObject);
-                else if (interactableObject.CompareTag("LockedDoor")) InteractWithLockedDoor(interactableObject);
-                else if (interactableObject.CompareTag("Key")) PickupKey(interactableObject);
-                else if (interactableObject.CompareTag("LockedBox")) InteractWithLockedBox(interactableObject);
-                else if (interactableObject.CompareTag("Note"))
-                    noteInteraction.HandleNoteInteraction(interactableObject);
-            }
-            else if (isPlayerNearbyUpgrade) PickUpUpgrade();
-            else if (isPlayerNearbyUpgradeStation) UpgradeLantern();
-            else if (isPlayerNearbyMaskUpgrade) PickUpMaskUpgrade();
-            else if (isPlayerNearbyUpgradeStation) UpgradeMask();
-            else if (lanternscript != null && lanternscript.IsLanternOn &&
-                     lanternscript.isUpgraded && flammableObject != null) BurnObject();
+            action.Invoke(interactableObject);
         }
+        else if (CanBurnFlammable())
+        {
+            BurnObject();
+        }
+    }
+
+    private bool CanBurnFlammable()
+    {
+        return flammableObject != null &&
+               lanternScript != null &&
+               lanternScript.IsLanternOn &&
+               lanternScript.IsUpgraded; // ✅ Now accessible
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Door") || other.CompareTag("LockedDoor") ||
-            other.CompareTag("Key") || other.CompareTag("LockedBox") || other.CompareTag("Note"))
-        {
-            isNearInteractable = true;
+        if (interactionMap.ContainsKey(other.tag))
             interactableObject = other.gameObject;
-        }
 
-        if (other.CompareTag("Upgrade"))
-        {
-            isPlayerNearbyUpgrade = true;
-            upgradeObject = other.gameObject;
-        }
-
-        if (other.CompareTag("UpgradeStation")) isPlayerNearbyUpgradeStation = true;
-        if (other.CompareTag("UpgradeMask")) isPlayerNearbyMaskUpgrade = true;
-
-        if (lanternscript != null && lanternscript.isUpgraded && other.CompareTag("Flammable"))
-        {
+        if (other.CompareTag("Flammable") && lanternScript?.IsUpgraded == true)
             flammableObject = other.gameObject;
-        }
+
+        if (other.CompareTag("UpgradeStation"))
+            isAtUpgradeStation = true;
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Door") || other.CompareTag("LockedDoor") ||
-            other.CompareTag("Key") || other.CompareTag("LockedBox") || other.CompareTag("Note"))
-        {
-            isNearInteractable = false;
+        if (other.gameObject == interactableObject)
             interactableObject = null;
-        }
 
-        if (other.CompareTag("Upgrade")) isPlayerNearbyUpgrade = false;
-        if (other.CompareTag("UpgradeStation")) isPlayerNearbyUpgradeStation = false;
-        if (other.CompareTag("UpgradeMask")) isPlayerNearbyMaskUpgrade = false;
-        if (other.CompareTag("Flammable") && other.gameObject == flammableObject) flammableObject = null;
+        if (other.gameObject == flammableObject)
+            flammableObject = null;
+
+        if (other.CompareTag("UpgradeStation"))
+            isAtUpgradeStation = false;
     }
 
-    void OpenDoor(GameObject door)
-    {
-        Animator doorAnimator = door.GetComponentInChildren<Animator>();
+    // --- Interaction Logic Methods ---
 
-        if (doorAnimator != null)
+    private void OpenDoor(GameObject door)
+    {
+        Animator animator = door.GetComponentInChildren<Animator>();
+        if (animator != null)
         {
-            bool isOpen = doorAnimator.GetCurrentAnimatorStateInfo(0).IsName("Open");
-            doorAnimator.SetTrigger(isOpen ? "close" : "open");
-            Debug.Log(isOpen ? "Closing the door." : "Opening the door.");
+            bool isOpen = animator.GetCurrentAnimatorStateInfo(0).IsName("Open");
+            animator.SetTrigger(isOpen ? "close" : "open");
         }
         else
         {
@@ -115,65 +108,51 @@ public class Player_Controller : MonoBehaviour
         }
     }
 
-    void InteractWithLockedDoor(GameObject lockedDoor)
+    private void InteractWithLockedDoor(GameObject lockedDoor)
     {
-        LockedDoor doorScript = lockedDoor.GetComponent<LockedDoor>();
-        if (doorScript != null)
+        var script = lockedDoor.GetComponent<LockedDoor>();
+        if (script != null && currentKey == script.requiredKey)
         {
-            // Check if the player has the correct key
-            if (currentKey == doorScript.requiredKey)
-            {
-                doorScript.ToggleDoor(currentKey);  // Pass the key object to the door's toggle function
-            }
-            else
-            {
-                // If the player doesn't have the key, show a message or sound
-                Debug.Log("You need the correct key to open this door!");
-            }
+            script.ToggleDoor(currentKey);
+        }
+        else
+        {
+            Debug.Log("You need the correct key!");
         }
     }
 
-    void PickupKey(GameObject key)
+    private void PickupKey(GameObject key)
     {
-        // Store the key the player picked up
         currentKey = key;
-        hasKey = true; // Set the flag that the player has a key
-        Debug.Log("Key picked up: " + key.name); // Log key pickup for debugging
-        Destroy(key); // Remove the key object from the scene (optional)
+        Destroy(key);
+        Debug.Log("Key picked up.");
     }
 
-    void InteractWithLockedBox(GameObject lockedBox)
+    private void InteractWithLockedBox(GameObject lockedBox)
     {
-        LockedBox box = lockedBox.GetComponent<LockedBox>();
-        if (box != null) box.StartInteraction();
+        lockedBox.GetComponent<LockedBox>()?.StartInteraction();
     }
 
-    private void PickUpUpgrade()
+    private void PickUpUpgrade(GameObject upgradeObj)
     {
-        if (upgradeObject != null)
-        {
-            lanternUpgradeParts++;
-            Debug.Log("Upgrade part collected! Total: " + lanternUpgradeParts);
-            Destroy(upgradeObject);
-        }
+        lanternUpgradeParts++;
+        Destroy(upgradeObj);
+        Debug.Log($"Upgrade part collected! Total: {lanternUpgradeParts}");
     }
 
     private void UpgradeLantern()
     {
-        if (lanternscript == null)
-        {
-            Debug.LogError("Lantern script is not assigned!");
-            return;
-        }
+        if (!isAtUpgradeStation) return;
 
         if (lanternUpgradeParts >= 3)
         {
             lanternUpgradeParts = 0;
-            lanternscript.UpgradeLantern();
+            lanternScript?.UpgradeLantern();
+            Debug.Log("Lantern upgraded!");
         }
         else
         {
-            Debug.Log("Not enough parts to upgrade! Need " + (3 - lanternUpgradeParts) + " more.");
+            Debug.Log($"Need {3 - lanternUpgradeParts} more parts to upgrade.");
         }
     }
 
@@ -181,45 +160,10 @@ public class Player_Controller : MonoBehaviour
     {
         if (flammableObject != null)
         {
-            lanternscript.currentCharge -= lanternscript.burnChargeCost; // Consume charge when burning
-            Debug.Log($"Burning {flammableObject.name}! Charge left: {lanternscript.currentCharge} / {lanternscript.maxCharge}");
-            Destroy(flammableObject); // Remove the flammable object from the scene
-            flammableObject = null; // Reset after burning
-        }
-        else
-        {
-            Debug.Log("No flammable object detected!");
-        }
-    }
-
-    private void PickUpMaskUpgrade()
-    {
-        if (maskUpgradeObject != null)
-        {
-            maskUpgradeParts++;
-            Debug.Log("Mask upgrade part collected! Total: " + maskUpgradeParts);
-            Destroy(maskUpgradeObject);
-        }
-    }
-
-    private void UpgradeMask()
-    {
-        if (maskScript == null)
-        {
-            Debug.LogError("Mask script is not assigned!");
-            return;
-        }
-
-        if (maskUpgradeParts >= 3)
-        {
-            maskUpgradeParts = 0; // Reset collected upgrades
-            maskScript.UpgradeMask();
-            Debug.Log("Mask upgraded successfully!");
-        }
-        else
-        {
-            Debug.Log("Not enough parts to upgrade the mask! Need " + (3 - maskUpgradeParts) + " more.");
+            lanternScript.ConsumeCharge(lanternScript.BurnChargeCost);
+            Debug.Log($"Burning {flammableObject.name}, charge left: {lanternScript.CurrentCharge}");
+            Destroy(flammableObject);
+            flammableObject = null;
         }
     }
 }
-
