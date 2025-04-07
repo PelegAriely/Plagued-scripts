@@ -22,6 +22,7 @@ public class Player_Controller : MonoBehaviour
     private int lanternUpgradeParts = 0;
 
     private Dictionary<string, Action<GameObject>> interactionMap;
+    private GameObject lastHighlightedObject = null;
 
     void Start()
     {
@@ -71,19 +72,26 @@ public class Player_Controller : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (interactionMap.ContainsKey(other.tag))
+        {
             interactableObject = other.gameObject;
+            HighlightObject(interactableObject);
+        }
 
         if (other.CompareTag("Flammable") && lanternScript?.IsUpgraded == true)
             flammableObject = other.gameObject;
 
         if (other.CompareTag("UpgradeStation"))
             isAtUpgradeStation = true;
+        
     }
 
     private void OnTriggerExit(Collider other)
     {
         if (other.gameObject == interactableObject)
+        {
+            RemoveHighlight(interactableObject);
             interactableObject = null;
+        }
 
         if (other.gameObject == flammableObject)
             flammableObject = null;
@@ -164,6 +172,35 @@ public class Player_Controller : MonoBehaviour
             Debug.Log($"Burning {flammableObject.name}, charge left: {lanternScript.CurrentCharge}");
             Destroy(flammableObject);
             flammableObject = null;
+        }
+    }
+    
+    private void HighlightObject(GameObject obj)
+    {
+        if (lastHighlightedObject != null && lastHighlightedObject != obj)
+        {
+            RemoveHighlight(lastHighlightedObject);
+        }
+
+        Outline outline = obj.GetComponent<Outline>();
+        if (outline != null)
+        {
+            outline.enabled = true;
+            lastHighlightedObject = obj;
+        }
+    }
+
+    private void RemoveHighlight(GameObject obj)
+    {
+        Outline outline = obj.GetComponent<Outline>();
+        if (outline != null)
+        {
+            outline.enabled = false;
+        }
+
+        if (lastHighlightedObject == obj)
+        {
+            lastHighlightedObject = null;
         }
     }
 }
