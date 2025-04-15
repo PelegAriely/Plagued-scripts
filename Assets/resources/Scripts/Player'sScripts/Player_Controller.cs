@@ -17,6 +17,7 @@ public class Player_Controller : MonoBehaviour
     private GameObject interactableObject = null;
     private GameObject flammableObject = null;
     private GameObject currentKey = null;
+    private CombinationLock activeCombinationLock = null;
 
     private bool isAtUpgradeStation = false;
     private int lanternUpgradeParts = 0;
@@ -41,6 +42,7 @@ public class Player_Controller : MonoBehaviour
             { "LockedDoor", InteractWithLockedDoor },
             { "Key", PickupKey },
             { "LockedBox", InteractWithLockedBox },
+            { "CombinationLock", InteractWithCombinationLock },
             { "Note", obj => noteInteraction?.HandleNoteInteraction(obj) },
             { "Upgrade", PickUpUpgrade },
             { "UpgradeStation", obj => UpgradeLantern() }
@@ -140,6 +142,30 @@ public class Player_Controller : MonoBehaviour
     {
         lockedBox.GetComponent<LockedBox>()?.StartInteraction();
     }
+    
+    private void InteractWithCombinationLock(GameObject obj)
+    {
+        CombinationLock lockScript = obj.GetComponent<CombinationLock>();
+        if (lockScript == null || lockScript.IsUnlocked) return;
+
+
+        if (activeCombinationLock == lockScript)
+        {
+            lockScript.StopInteraction();
+            activeCombinationLock = null;
+        }
+        else
+        {
+            if (activeCombinationLock != null)
+            {
+                activeCombinationLock.StopInteraction();
+            }
+
+            lockScript.StartInteraction();
+            activeCombinationLock = lockScript;
+        }
+    }
+    
 
     private void PickUpUpgrade(GameObject upgradeObj)
     {
