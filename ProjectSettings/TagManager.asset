@@ -19,6 +19,7 @@ TagManager:
   - UpgradeMask
   - ReplenishMask
   - CameraTrigger
+  - CombinationLock
   layers:
   - Default
   - TransparentFX

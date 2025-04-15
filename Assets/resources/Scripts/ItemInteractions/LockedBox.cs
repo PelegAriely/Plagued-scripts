@@ -63,12 +63,6 @@ public class LockedBox : MonoBehaviour
                 }
             }
         }
-
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            if (isInteracting) StopInteraction();
-            else StartInteraction();
-        }
     }
 
     private void UnlockBox()
@@ -82,7 +76,16 @@ public class LockedBox : MonoBehaviour
 
     public void StartInteraction()
     {
-        if (isUnlocked || !lockModel || !lockViewingPosition) return;
+        if (isUnlocked || !lockModel || !lockViewingPosition)
+        {
+            return;
+        }
+
+        if (isInteracting)
+        {
+            StopInteraction();
+            return;
+        }
 
         isInteracting = true;
         enteredCode = "";
