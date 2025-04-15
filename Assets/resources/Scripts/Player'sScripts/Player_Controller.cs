@@ -146,7 +146,7 @@ public class Player_Controller : MonoBehaviour
     private void InteractWithCombinationLock(GameObject obj)
     {
         CombinationLock lockScript = obj.GetComponent<CombinationLock>();
-        if (lockScript == null || lockScript.IsUnlocked) return;
+        if (lockScript == null || lockScript.IsUnlocked()) return;
 
 
         if (activeCombinationLock == lockScript)
