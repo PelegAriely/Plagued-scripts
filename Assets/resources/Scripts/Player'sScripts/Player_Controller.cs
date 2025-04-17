@@ -24,6 +24,9 @@ public class Player_Controller : MonoBehaviour
 
     private Dictionary<string, Action<GameObject>> interactionMap;
     private GameObject lastHighlightedObject = null;
+    private PuzzleObject heldPuzzleObject = null;
+    [SerializeField] private Transform handSlot; // empty child object in front of player
+    private Collider currentPillarCollider = null;
 
     void Start()
     {
@@ -42,6 +45,7 @@ public class Player_Controller : MonoBehaviour
             { "LockedDoor", InteractWithLockedDoor },
             { "Key", PickupKey },
             { "LockedBox", InteractWithLockedBox },
+            { "PuzzleObject", InteractWithPuzzleObject },
             { "CombinationLock", InteractWithCombinationLock },
             { "Note", obj => noteInteraction?.HandleNoteInteraction(obj) },
             { "Upgrade", PickUpUpgrade },
@@ -73,7 +77,7 @@ public class Player_Controller : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (interactionMap.ContainsKey(other.tag))
+        if (interactionMap.ContainsKey(other.tag) && other.tag != "Placed")
         {
             interactableObject = other.gameObject;
             HighlightObject(interactableObject);
@@ -84,7 +88,9 @@ public class Player_Controller : MonoBehaviour
 
         if (other.CompareTag("UpgradeStation"))
             isAtUpgradeStation = true;
-        
+        if (other.GetComponent<Pillar>() != null)
+            currentPillarCollider = other;
+
     }
 
     private void OnTriggerExit(Collider other)
@@ -100,6 +106,9 @@ public class Player_Controller : MonoBehaviour
 
         if (other.CompareTag("UpgradeStation"))
             isAtUpgradeStation = false;
+        
+        if (other == currentPillarCollider)
+            currentPillarCollider = null;
     }
 
     // --- Interaction Logic Methods ---
@@ -227,6 +236,41 @@ public class Player_Controller : MonoBehaviour
         if (lastHighlightedObject == obj)
         {
             lastHighlightedObject = null;
+        }
+    }
+    
+    private void InteractWithPuzzleObject(GameObject obj)
+    {
+        if (PuzzleManager.Instance.IsPuzzleSolved()) return;
+
+        if (heldPuzzleObject == null)
+        {
+            // Pick up the object
+            heldPuzzleObject = obj.GetComponent<PuzzleObject>();
+            if (heldPuzzleObject != null)
+            {
+                heldPuzzleObject.PickUp(handSlot);
+                Debug.Log($"Picked up {heldPuzzleObject.name}");
+            }
+        }
+        else
+        {
+            // Drop inside pillar if in one
+            if (currentPillarCollider != null)
+            {
+                Pillar pillar = currentPillarCollider.GetComponent<Pillar>();
+                if (pillar != null)
+                {
+                    heldPuzzleObject.PlaceOnPillar(pillar);
+                    heldPuzzleObject = null;
+                    return;
+                }
+            }
+
+            // Drop in world
+            Vector3 dropPos = transform.position + transform.forward + Vector3.up * 0.5f;
+            heldPuzzleObject.Drop(dropPos);
+            heldPuzzleObject = null;
         }
     }
 }
