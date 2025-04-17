@@ -57,6 +57,14 @@ public class Player_Controller : MonoBehaviour
     {
         if (!Input.GetKeyDown(interactionKey)) return;
 
+        // ✅ If holding an object, prioritize dropping or placing
+        if (heldPuzzleObject != null)
+        {
+            HandleHeldObjectInteraction();
+            return;
+        }
+
+        // Normal interaction
         if (interactableObject != null && interactionMap.TryGetValue(interactableObject.tag, out var action))
         {
             action.Invoke(interactableObject);
@@ -77,7 +85,15 @@ public class Player_Controller : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (interactionMap.ContainsKey(other.tag) && other.tag != "Placed")
+        bool isInteractable = interactionMap.ContainsKey(other.tag) && other.tag != "Placed";
+        bool hasOutline = other.GetComponent<Outline>() != null;
+
+        if (isInteractable || (hasOutline && other.GetComponent<Pillar>() != null && heldPuzzleObject != null))
+        {
+            interactableObject = other.gameObject;
+            HighlightObject(interactableObject);
+        }
+        else if (heldPuzzleObject == null && (isInteractable || hasOutline))
         {
             interactableObject = other.gameObject;
             HighlightObject(interactableObject);
@@ -88,14 +104,14 @@ public class Player_Controller : MonoBehaviour
 
         if (other.CompareTag("UpgradeStation"))
             isAtUpgradeStation = true;
+
         if (other.GetComponent<Pillar>() != null)
             currentPillarCollider = other;
-
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.gameObject == interactableObject)
+        if (other.gameObject == interactableObject && heldPuzzleObject == null)
         {
             RemoveHighlight(interactableObject);
             interactableObject = null;
@@ -106,9 +122,35 @@ public class Player_Controller : MonoBehaviour
 
         if (other.CompareTag("UpgradeStation"))
             isAtUpgradeStation = false;
-        
+
         if (other == currentPillarCollider)
             currentPillarCollider = null;
+    }
+    
+    private void HandleHeldObjectInteraction()
+    {
+        // Try to place on pillar if in one
+        if (currentPillarCollider != null)
+        {
+            Pillar pillar = currentPillarCollider.GetComponent<Pillar>();
+            if (pillar != null && !pillar.HasObject)
+            {
+                heldPuzzleObject.PlaceOnPillar(pillar);
+                heldPuzzleObject = null;
+                return;
+            }
+        }
+
+        // Otherwise, drop it at player's feet
+        Vector3 dropPos = transform.position + transform.forward + Vector3.up * 0.5f;
+        heldPuzzleObject.Drop(dropPos);
+        heldPuzzleObject = null;
+        
+        if (interactableObject != null)
+        {
+            RemoveHighlight(interactableObject);
+            interactableObject = null;
+        }
     }
 
     // --- Interaction Logic Methods ---
@@ -245,29 +287,33 @@ public class Player_Controller : MonoBehaviour
 
         if (heldPuzzleObject == null)
         {
-            // Pick up the object
             heldPuzzleObject = obj.GetComponent<PuzzleObject>();
             if (heldPuzzleObject != null)
             {
                 heldPuzzleObject.PickUp(handSlot);
                 Debug.Log($"Picked up {heldPuzzleObject.name}");
+
+                // Clear highlight since we can't interact while holding
+                RemoveHighlight(interactableObject);
+                interactableObject = null;
             }
         }
         else
         {
-            // Drop inside pillar if in one
             if (currentPillarCollider != null)
             {
                 Pillar pillar = currentPillarCollider.GetComponent<Pillar>();
                 if (pillar != null)
                 {
-                    heldPuzzleObject.PlaceOnPillar(pillar);
-                    heldPuzzleObject = null;
-                    return;
+                    if (!pillar.HasObject)
+                    {
+                        heldPuzzleObject.PlaceOnPillar(pillar);
+                        heldPuzzleObject = null;
+                        return;
+                    }
                 }
             }
 
-            // Drop in world
             Vector3 dropPos = transform.position + transform.forward + Vector3.up * 0.5f;
             heldPuzzleObject.Drop(dropPos);
             heldPuzzleObject = null;

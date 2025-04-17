@@ -17,12 +17,17 @@ public class PuzzleObject : MonoBehaviour
 
     public void PickUp(Transform hand)
     {
+        if (currentPillar != null)
+        {
+            currentPillar.RemoveObject(); 
+            currentPillar = null;
+        }
+
         isHeld = true;
-        currentPillar = null;
-        
+
         rb.isKinematic = true;
         col.enabled = false;
-        
+
         transform.SetParent(hand);
         transform.localPosition = Vector3.zero;
         transform.localRotation = Quaternion.identity;
@@ -30,21 +35,30 @@ public class PuzzleObject : MonoBehaviour
 
     public void Drop(Vector3 dropPos)
     {
+        if (currentPillar != null)
+        {
+            currentPillar.RemoveObject(); 
+            currentPillar = null;
+        }
+
         isHeld = false;
-        
         transform.SetParent(null);
         transform.position = dropPos;
 
         rb.isKinematic = false;
         col.enabled = true;
 
-        currentPillar = null;
-
         PuzzleManager.Instance.EvaluatePuzzleState();
     }
 
     public void PlaceOnPillar(Pillar pillar)
     {
+        if (pillar.HasObject)
+            return; // Don't place if already occupied
+
+        if (!pillar.TryPlace(this))
+            return;
+        
         isHeld = false;
         currentPillar = pillar;
         
