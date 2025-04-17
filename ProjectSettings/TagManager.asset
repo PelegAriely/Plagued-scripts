@@ -20,6 +20,7 @@ TagManager:
   - ReplenishMask
   - CameraTrigger
   - CombinationLock
+  - PuzzleObject
   layers:
   - Default
   - TransparentFX
