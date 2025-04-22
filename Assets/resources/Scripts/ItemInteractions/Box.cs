@@ -12,7 +12,7 @@ public class Box : MonoBehaviour
 
         isOpen = true;
         if (boxAnimator != null)
-            boxAnimator.SetTrigger("open"); // ✅ Play animation
+            boxAnimator.SetTrigger("Open"); // ✅ Play animation
 
         if (itemInside != null)
         {

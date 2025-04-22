@@ -44,6 +44,7 @@ public class Player_Controller : MonoBehaviour
             { "Door", OpenDoor },
             { "LockedDoor", InteractWithLockedDoor },
             { "Key", PickupKey },
+            { "Box", InteractWithBox },
             { "LockedBox", InteractWithLockedBox },
             { "PuzzleObject", InteractWithPuzzleObject },
             { "CombinationLock", InteractWithCombinationLock },
@@ -166,6 +167,15 @@ public class Player_Controller : MonoBehaviour
         else
         {
             door.SetActive(!door.activeSelf);
+        }
+    }
+    
+    private void InteractWithBox(GameObject boxObject)
+    {
+        Box box = boxObject.GetComponent<Box>();
+        if (box != null)
+        {
+            box.OpenBox();
         }
     }
 

@@ -29,7 +29,7 @@ public class HiddenObject : MonoBehaviour
         
         if (lanternScript != null)
         {
-            isLanternOn = lanternScript.IsLanternOn;
+            isLanternOn = lanternScript.isLanternOn;
             lanternScript.OnLanternToggled += HandleLanternToggle;
         }
     }
