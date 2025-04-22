@@ -9,9 +9,6 @@ public class PlayerInteraction : MonoBehaviour
     public KeyCode interactMaskKey = KeyCode.Q;
     public KeyCode useFillObjectKey = KeyCode.F;
 
-    public TextMeshProUGUI interactionLanternText;
-    public TextMeshProUGUI interactionMaskText;
-
     public float baseBreathDepletionRate = 10f;
     public float breathRegenRate = 5f;
     private float currentBreath = 100f;
@@ -24,12 +21,12 @@ public class PlayerInteraction : MonoBehaviour
 
     // Dictionary to map keys to actions
     private Dictionary<KeyCode, Action> keyActions;
-
+    private GameObject lastHighlightedObject = null;
+    private Transform lastSavePoint;
+    private bool hasTeleported = false;
+    
     void Start()
     {
-        interactionLanternText.gameObject.SetActive(false);
-        interactionMaskText.gameObject.SetActive(false);
-
         // Map keys to relevant actions
         keyActions = new Dictionary<KeyCode, Action>
         {
@@ -67,18 +64,41 @@ public class PlayerInteraction : MonoBehaviour
             float rate = baseBreathDepletionRate * multiplier;
 
             currentBreath = Mathf.Max(0f, currentBreath - rate * Time.deltaTime);
-
             Debug.Log($"[Breath] Current: {currentBreath:0.00} (Multiplier: {multiplier})");
 
-            if (currentBreath <= 0f)
+            if (currentBreath <= 0f && !hasTeleported)
             {
                 Debug.LogWarning("⚠️ Out of breath!");
+
+                if (lastSavePoint != null)
+                {
+                    Debug.Log("🧭 Teleporting to last save point...");
+                    transform.position = lastSavePoint.position;
+
+                    currentBreath = maxBreath; // Reset breath
+                    hasTeleported = true;
+                    isInFog = false; // Exit fog manually after teleport
+                }
+                else
+                {
+                    Debug.LogWarning("🚫 No save point set!");
+                }
             }
         }
-        else if (currentBreath < maxBreath)
+        else
         {
-            currentBreath = Mathf.Min(maxBreath, currentBreath + breathRegenRate * Time.deltaTime);
-            Debug.Log($"[Breath Regenerating] Current: {currentBreath:0.00}");
+            // Regenerate breath only outside fog
+            if (currentBreath < maxBreath)
+            {
+                currentBreath = Mathf.Min(maxBreath, currentBreath + breathRegenRate * Time.deltaTime);
+                Debug.Log($"[Breath Regenerating] Current: {currentBreath:0.00}");
+            }
+
+            // Reset teleport flag once we are safe
+            if (hasTeleported && currentBreath > 0f)
+            {
+                hasTeleported = false;
+            }
         }
     }
     
@@ -93,20 +113,19 @@ public class PlayerInteraction : MonoBehaviour
         if (other.TryGetComponent(out Lantern foundLantern))
         {
             lantern = foundLantern;
-            interactionLanternText.text = $"Press {interactLanternKey} to interact with Lantern";
-            interactionLanternText.gameObject.SetActive(true);
+            HighlightObject(other.gameObject);
         }
 
         if (other.TryGetComponent(out Mask foundMask))
         {
             mask = foundMask;
-            interactionMaskText.text = $"Press {interactMaskKey} to interact with Mask";
-            interactionMaskText.gameObject.SetActive(true);
+            HighlightObject(other.gameObject);
         }
 
         if (other.TryGetComponent(out OilBarrel foundBarrel))
         {
             oilBarrel = foundBarrel;
+            HighlightObject(other.gameObject);
         }
     }
 
@@ -120,19 +139,54 @@ public class PlayerInteraction : MonoBehaviour
 
         if (other.TryGetComponent(out Lantern _))
         {
+            RemoveHighlight(other.gameObject);
             lantern = null;
-            interactionLanternText.gameObject.SetActive(false);
         }
 
         if (other.TryGetComponent(out Mask _))
         {
+            RemoveHighlight(other.gameObject);
             mask = null;
-            interactionMaskText.gameObject.SetActive(false);
         }
 
         if (other.TryGetComponent(out OilBarrel _))
         {
+            RemoveHighlight(other.gameObject);
             oilBarrel = null;
         }
+    }
+    
+    private void HighlightObject(GameObject obj)
+    {
+        if (lastHighlightedObject != null && lastHighlightedObject != obj)
+        {
+            RemoveHighlight(lastHighlightedObject);
+        }
+
+        Outline outline = obj.GetComponent<Outline>();
+        if (outline != null)
+        {
+            outline.enabled = true;
+            lastHighlightedObject = obj;
+        }
+    }
+
+    private void RemoveHighlight(GameObject obj)
+    {
+        Outline outline = obj.GetComponent<Outline>();
+        if (outline != null)
+        {
+            outline.enabled = false;
+        }
+
+        if (lastHighlightedObject == obj)
+        {
+            lastHighlightedObject = null;
+        }
+    }
+    
+    public void SetLastSavePoint(Transform savePoint)
+    {
+        lastSavePoint = savePoint;
     }
 }

@@ -54,20 +54,22 @@ public class PuzzleObject : MonoBehaviour
     public void PlaceOnPillar(Pillar pillar)
     {
         if (pillar.HasObject)
-            return; // Don't place if already occupied
+            return;
 
         if (!pillar.TryPlace(this))
             return;
-        
+
         isHeld = false;
         currentPillar = pillar;
-        
+
         transform.SetParent(null);
         transform.position = pillar.gizmoSpawnPoint.position;
         transform.rotation = pillar.gizmoSpawnPoint.rotation;
 
         rb.isKinematic = true;
-        col.enabled = false;
+
+        // ✅ Collider must be enabled so you can pick it up again
+        col.enabled = true;
 
         PuzzleManager.Instance.EvaluatePuzzleState();
     }

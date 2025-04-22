@@ -12,9 +12,18 @@ public class Mask : MonoBehaviour
     public Transform maskOnPosition;
     public Transform maskOffPosition;
 
+    [Header("3D Interaction Text")]
+    public TextMeshPro interactionText;
+
     private bool isMaskActive = false;
 
     public bool IsMaskActive => isMaskActive;
+
+    void Start()
+    {
+        if (interactionText != null)
+            interactionText.gameObject.SetActive(false);
+    }
     
     public float GetDepletionMultiplier()
     {
@@ -23,6 +32,8 @@ public class Mask : MonoBehaviour
 
     public void ToggleMask()
     {
+        if (interactionText != null)
+            interactionText.gameObject.SetActive(false);
         if (isMaskActive)
             TurnOffMask();
         else
@@ -60,6 +71,23 @@ public class Mask : MonoBehaviour
             transform.SetParent(maskOffPosition);
             transform.localPosition = Vector3.zero;
             transform.localRotation = Quaternion.identity;
+        }
+    }
+    
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Player") && interactionText != null)
+        {
+            interactionText.text = "Press Q to interact with Mask";
+            interactionText.gameObject.SetActive(true);
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("Player") && interactionText != null)
+        {
+            interactionText.gameObject.SetActive(false);
         }
     }
 }

@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using TMPro;
 
 public class Lantern : MonoBehaviour
 {
@@ -14,8 +15,11 @@ public class Lantern : MonoBehaviour
     public float burnInterval = 1f;
     public float burnChargeCost = 10f;
 
+    [Header("3D Interaction Text")]
+    public TextMeshPro interactionText;
+
     private float currentCharge;
-    private bool isLanternOn = false;
+    public bool isLanternOn = false;
     private bool isInFog = false;
     private bool hasBurnUpgrade = false;
 
@@ -27,18 +31,23 @@ public class Lantern : MonoBehaviour
     public float BurnChargeCost => burnChargeCost;
     public bool IsLanternOn => isLanternOn;
     public bool IsUpgraded => hasBurnUpgrade;
-
     public event System.Action<bool> OnLanternToggled;
 
     void Start()
     {
         currentCharge = maxCharge;
         lanternLight.SetActive(false);
+
+        if (interactionText != null)
+            interactionText.gameObject.SetActive(false);
     }
 
     public void ToggleLantern()
     {
         if (isInFog) return; // If in fog, prevent turning on
+        
+        if (interactionText != null)
+            interactionText.gameObject.SetActive(false);
 
         if (isLanternOn)
             TurnOffLantern();
@@ -134,36 +143,40 @@ public class Lantern : MonoBehaviour
         if (other.CompareTag("Fog"))
         {
             isInFog = true;
-            TurnOffLantern(); // Lantern turns off automatically in fog
+            TurnOffLantern();
         }
 
         if (hasBurnUpgrade && other.CompareTag("Burnable"))
         {
             currentBurnable = other;
-            
-            // Start burning if the lantern is already on
             if (isLanternOn)
                 burnCoroutine = StartCoroutine(BurnObjects());
+        }
+
+        if (other.CompareTag("Player") && interactionText != null)
+        {
+            interactionText.text = "Press R to interact with Lantern";
+            interactionText.gameObject.SetActive(true);
         }
     }
     
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Fog"))
-        {
-            isInFog = false;
-        }
+        if (other.CompareTag("Fog")) isInFog = false;
 
         if (hasBurnUpgrade && other.CompareTag("Burnable"))
         {
-            currentBurnable = null; // No longer near a burnable object
-
-            // Stop burning if the object is out of range
+            currentBurnable = null;
             if (burnCoroutine != null)
             {
                 StopCoroutine(burnCoroutine);
                 burnCoroutine = null;
             }
+        }
+
+        if (other.CompareTag("Player") && interactionText != null)
+        {
+            interactionText.gameObject.SetActive(false);
         }
     }
     
