@@ -5,28 +5,34 @@ using UnityEngine;
 
 public class PlayerInteraction : MonoBehaviour
 {
+    [Header("Controls")]
     public KeyCode interactLanternKey = KeyCode.R;
     public KeyCode interactMaskKey = KeyCode.Q;
     public KeyCode useFillObjectKey = KeyCode.F;
 
+    [Header("Breathing Settings")]
     public float baseBreathDepletionRate = 10f;
     public float breathRegenRate = 5f;
+
     private float currentBreath = 100f;
     private float maxBreath = 100f;
     private bool isInFog = false;
+    private bool hasTeleported = false;
 
+    [Header("References")]
     private Lantern lantern;
     private Mask mask;
     private OilBarrel oilBarrel;
 
-    // Dictionary to map keys to actions
     private Dictionary<KeyCode, Action> keyActions;
     private GameObject lastHighlightedObject = null;
+
     private Transform lastSavePoint;
-    private bool hasTeleported = false;
+    private CharacterController characterController;
     
     void Start()
     {
+        characterController = GetComponent<CharacterController>();
         // Map keys to relevant actions
         keyActions = new Dictionary<KeyCode, Action>
         {
@@ -73,11 +79,20 @@ public class PlayerInteraction : MonoBehaviour
                 if (lastSavePoint != null)
                 {
                     Debug.Log("🧭 Teleporting to last save point...");
-                    transform.position = lastSavePoint.position;
 
-                    currentBreath = maxBreath; // Reset breath
+                    // Disable controller before teleporting
+                    characterController.enabled = false;
+                    transform.position = lastSavePoint.position;
+                    characterController.enabled = true;
+
+                    // Optional: Reset momentum if using rigidbody (not needed for CharacterController)
+                    // GetComponent<Rigidbody>()?.velocity = Vector3.zero;
+
+                    currentBreath = maxBreath;
                     hasTeleported = true;
-                    isInFog = false; // Exit fog manually after teleport
+                    isInFog = false;
+
+                    Debug.Log("✅ Teleport successful.");
                 }
                 else
                 {
@@ -87,14 +102,12 @@ public class PlayerInteraction : MonoBehaviour
         }
         else
         {
-            // Regenerate breath only outside fog
             if (currentBreath < maxBreath)
             {
                 currentBreath = Mathf.Min(maxBreath, currentBreath + breathRegenRate * Time.deltaTime);
                 Debug.Log($"[Breath Regenerating] Current: {currentBreath:0.00}");
             }
 
-            // Reset teleport flag once we are safe
             if (hasTeleported && currentBreath > 0f)
             {
                 hasTeleported = false;
@@ -188,5 +201,6 @@ public class PlayerInteraction : MonoBehaviour
     public void SetLastSavePoint(Transform savePoint)
     {
         lastSavePoint = savePoint;
+        Debug.Log($"💾 Save point updated to: {savePoint.name}");
     }
 }
